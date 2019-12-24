@@ -71,3 +71,23 @@ def createTree(dataSet, labels):
         newDataSet = splitDataSet(dataSet, bestFeature, v)
         myTree[labels[bestFeature]][v] = createTree(newDataSet, newLabels)
     return myTree
+
+def classify(inputTree,featLabels,testVec):
+    feature = list(inputTree.keys())[0]
+    featureId = featLabels.index(feature)
+    value = testVec[featureId]
+    subTree = inputTree[feature][value]
+    if type(subTree).__name__ == 'dict':
+        return classify(subTree, featLabels, testVec)
+    return str(subTree)
+
+def storeTree(inputTree,filename):
+    import pickle
+    fw = open(filename,'wb')
+    pickle.dump(inputTree,fw)
+    fw.close()
+
+def grabTree(filename):
+    import pickle
+    fr = open(filename, 'rb')
+    return pickle.load(fr)
