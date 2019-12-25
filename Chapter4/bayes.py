@@ -23,3 +23,14 @@ def setOfWords2Vec(vocabList, inputSet):
     for word in inputSet:
         vec [vocabList.index(word)] = 1
     return vec
+
+import numpy as np
+def trainNB0(trainMatrix,trainCategory):
+    matrix = np.array(trainMatrix)
+    category = np.array(trainCategory)
+    p0Num = matrix[category==0].sum(axis=0)
+    p0 = p0Num / p0Num.sum()   # 为什么是p0Num.sum()？不是category[category==0].shape[0]？
+    p1Num = matrix[category==1].sum(axis=0)
+    p1 = p1Num / p1Num.sum()
+    pAbusive = category[category==1].shape[0] / category.shape[0]
+    return p0, p1, pAbusive
