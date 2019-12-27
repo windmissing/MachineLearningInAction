@@ -39,9 +39,9 @@ import numpy as np
 def trainNB1(trainMatrix,trainCategory):
     matrix = np.array(trainMatrix)
     category = np.array(trainCategory)
-    p0Num = matrix[category==0].sum(axis=0) + np.ones(len(trainMatrix[0]))
+    p0Num = matrix[category==0, :].sum(axis=0) + np.ones(len(trainMatrix[0]))
     p0 = p0Num / p0Num.sum()   # 这一次的分母还是很奇怪
-    p1Num = matrix[category==1].sum(axis=0) + np.ones(len(trainMatrix[0]))
+    p1Num = matrix[category==1, :].sum(axis=0) + np.ones(len(trainMatrix[0]))
     p1 = p1Num / p1Num.sum()
     pAbusive = category[category==1].shape[0] / category.shape[0]
     return np.log(p0), np.log(p1), pAbusive
@@ -65,3 +65,38 @@ def testingNB():
     thisDoc = np.array(setOfWords2Vec(myVocabList, testEntry))
     print (testEntry,'classified as: ',classifyNB(thisDoc,p0V,p1V,pAb))
 
+def textParse(bigString):
+    import re
+    listOfTokens = re.split("\W+", bigString)
+    return [tok.lower() for tok in listOfTokens if len(tok) > 0]
+
+def spamTest():
+    # 读入原始数据，分割成单词的list
+    dataSet = []
+    for i in range(1,26):
+        data = textParse(open('email/spam/'+str(i)+'.txt').read())
+        dataSet.append(data)
+    for i in range(1,26):
+        data = textParse(open('email/ham/'+str(i)+'.txt',encoding='ISO-8859-15').read())
+        dataSet.append(data)
+    labels = np.hstack([np.zeros((26)), np.ones((26))])
+    # 生成vocabulary
+    myVocabList = createVocabList(dataSet)
+    # 根据vovabulary把单词list转成vec
+    dataVec = []
+    for data in dataSet:
+        dataVec.append(setOfWords2Vec(myVocabList, data))
+    # 随机取40个数据为训练数据，10个数据为测试数据
+    index = np.random.permutation(50)
+    trainMat = np.array(dataVec)[index[10:]]
+    trainLabel = np.array(labels)[index[10:]]
+    # 训练
+    p0V,p1V,pAb=trainNB1(trainMat,trainLabel)
+    # 测试
+    error = 0
+    for i in index[:10]:
+        label = classifyNB(dataVec[i],p0V,p1V,pAb)
+        if label != labels[i]:
+            error+=1
+            print(dataSet[i])
+    print("error rate = " + str(error/10))
