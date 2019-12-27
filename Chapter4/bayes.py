@@ -47,25 +47,34 @@ def trainNB1(trainMatrix,trainCategory):
     return np.log(p0), np.log(p1), pAbusive
 
 def classifyNB(vec2Classify, p0Vec, p1Vec, pClass1):
+    # 测试样本vec2Classify属于class 0的概率
     p0 = p0Vec[vec2Classify==1].sum() + np.log(1-pClass1)
+    # 测试样本vec2Classify属于class 1的概率
     p1 = p1Vec[vec2Classify==1].sum() + np.log(pClass1)
     return int(p1 > p0)
 
 def testingNB():
+    # 读入原始数据
     listOPosts,listClasses = loadDataSet()
+    # 生成vocabulary
     myVocabList = createVocabList(listOPosts)
+    # 根据vovabulary把单词list转成vec
     trainMat=[]
     for postinDoc in listOPosts:
         trainMat.append(setOfWords2Vec(myVocabList, postinDoc))
+    # 训练
     p0V,p1V,pAb=trainNB1(trainMat,listClasses)
+    # 测试1
     testEntry = ['love', 'my', 'dalmation']
     thisDoc = np.array(setOfWords2Vec(myVocabList, testEntry))
     print (testEntry,'classified as: ',classifyNB(thisDoc,p0V,p1V,pAb))
+    # 测试2
     testEntry = ['stupid', 'garbage']
     thisDoc = np.array(setOfWords2Vec(myVocabList, testEntry))
     print (testEntry,'classified as: ',classifyNB(thisDoc,p0V,p1V,pAb))
 
 def textParse(bigString):
+    # 将完整的样本按单词分割，且全部转成小写
     import re
     listOfTokens = re.split("\W+", bigString)
     return [tok.lower() for tok in listOfTokens if len(tok) > 0]
