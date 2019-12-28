@@ -68,3 +68,35 @@ def stocGradAscent1(dataMatrix, classLabels, numIter=150):
             error = sigmoid(dataArray * coeff) - classLabels[index]
             coeff = coeff - alpha * dataArray.T * error
     return coeff
+
+def classifyVector(inX, weights):
+    h = sigmoid(np.mat(inX) * np.mat(weights))
+    return h > 0.5
+
+
+def colicTest():
+    trainData = []
+    trainLabel = []
+    for line in open('horseColicTraining.txt').readlines():
+        dataList = [1] + [float(data) for data in line.strip().split('\t')]  # 应该增加一个x0 =1，但书上没有[1]
+        trainData.append(dataList[0:-1])
+        trainLabel.append(dataList[-1])
+    trainWeights = stocGradAscent1(trainData, trainLabel, 500)
+
+    error, total = 0, 0
+    for line in open('horseColicTest.txt').readlines():
+        total += 1
+        dataList = [1] + [float(data) for data in line.strip().split('\t')]
+        testData = dataList[0:-1]
+        testLabel = dataList[-1]
+        y = classifyVector(testData, trainWeights)
+        if y != testLabel:
+            error += 1
+    return error / total
+
+def multiTest():
+    numTests=10
+    errorSum = 0.0
+    for k in range(numTests):
+        errorSum += colicTest()   # 这种写法效率很低，读文件很耗时且重复多次没有意义
+    return errorSum / numTests
