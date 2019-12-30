@@ -15,7 +15,6 @@ def loadDataSet():
 def sigmoid(inX):
     return 1.0 / (1 + np.exp(-inX))
 
-
 def gradAscent(dataMatIn, classLabels):
     loops = 500
     alpha = 0.001
