@@ -183,3 +183,122 @@ def showSimpleSMO(dataArr, labelArr, alphas, b):
             x,y = dataMat[i]
             plt.scatter([x], [y], s=150, c='none', alpha=0.7, linewidth=1.5, edgecolor='#AB3319')
     plt.show()
+
+class optStruct:
+    def __init__(self, dataMatIn, classLabels, C, toler):
+        self.X = np.mat(dataMatIn)
+        self.labelMat = np.mat(classLabels).transpose()
+        self.C = C
+        self.toler = toler
+        self.m= np.shape(self.X)[0]
+        self.alphas = np.mat(np.zeros((self.m, 1)))# 把所有alpha都初始化为0
+        self.b = 0
+        self.eCache = np.mat(np.zeros((self.m, 2))) # m*2, [i,0]代表[i,1]值是否有效。[i,1]代表E_i
+
+# 相当于上面的def E(dataMat, labelMat, alphas, i, b)
+def calcEk(oS, k):
+     # fx: the predition of the class
+    fXi = float(np.multiply(oS.alphas, oS.labelMat).T*(oS.X*oS.X[k,:].T)) + oS.b
+    # E: error between predition class and real class
+    Ei = fXi - oS.labelMat[k]
+    return Ei
+
+# 类似于前面的def selectJrand(i, m):
+def selectJ(i, oS, Ei):
+    maxj,maxEj,maxDeltaE = 0, 0, -1
+    oS.eCache[i] = [1, Ei]
+    validEcacheList = np.nonzero(oS.eCache.A[:, 0])
+    if len(validEcacheList) > 1: # len至少为1，因为至少eCache[i]=1。但如果len=1，说明这是第一次运行，只有eCache[i]是有效的。
+        for j in validEcacheList:
+            Ej = calcEk(oS, j)
+            # choose the second alpha so that we’ll take the maximum step during each optimization
+            if abs(Ej-Ei) > maxEj:  #
+                maxk, maxEj, maxDeltaE = j, Ej, abs(Ej-Ei)
+    else:
+        maxj = selectJrand(i, oS.m)
+        maxEj = calcEk(oS, maxj)
+    return maxj, maxEj
+
+def updateEk(oS, k):
+    oS.eCache[k] = [1, calcEk(oS, k)]
+
+
+def choose_2(oS, I):
+    return ((I['y'] * I['E'] < - oS.toler) and (I['a'] < oS.C)) or ((I['y'] * I['E'] > oS.toler) and (I['a'] > 0))
+
+
+def generateNode_2(oS, index):
+    return {'index': index,  # 更新第几个alpha
+            'x': oS.X[index, :],  # 对应的数据
+            'y': oS.labelMat[index],  # 对应的标签
+            'a': oS.alphas[index],  # 当前的alpha值
+            # E: error between predition class and real class
+            # 基于当前alpha对第index个数据的预测分类与该数据的真实分类做比较
+            'E': calcEk(oS, index)
+            }
+
+
+def generateI_2(oS, i):
+    # 如果这一轮要更新alpha_i，先把alpha_i对应的样本信息都准备好
+    I = generateNode_2(oS, i)
+    # condition to choose i: error is big enough
+    if (not choose_2(oS, I)):
+        raise UserWarning('error not big enough')
+    return I
+
+
+def generateJ_2(oS, I):
+    # select j randomly
+    j, _ = selectJ(I['index'], oS, I['E'])
+    return generateNode_2(oS, j)
+
+
+def updateEk_2(oS, K):
+    k = K['index']
+    oS.alphas[k] = K['a']
+    oS.eCache[k] = [1, calcEk(oS, k)]
+
+
+# 更新alpha_i, alpha_j和b，使得目标函数进一步变大
+def update_2(oS, I, J):
+    # 根据公式先更新alpha_j
+    update_alpha_j(I, J, oS.C)
+    updateEk_2(oS, J)
+    # change alpha_i as alpha_j changed
+    update_alpha_i(I, J)
+    updateEk_2(oS, I)
+    # 当更新了一对a_i,a_j之后，需要重新计算b。
+    oS.b = update_b(I, J, oS.C, oS.b)
+    print(I['a'], J['a'], oS.b)
+    # return I['a'], J['a'], oS.b
+
+
+def innerL(i, oS):
+    try:
+        I = generateI_2(oS, i)
+        J = generateJ_2(oS, I)
+        update_2(oS, I, J)
+    except UserWarning as err:
+        print(err)  # 打印报错的字符串
+        return 0
+    return 1
+
+
+def smoP(dataMatIn, classLabels, C, toler, maxIter):
+    oS = optStruct(dataMatIn, classLabels, C, toler)
+    iter = 0
+    entireSet, alphaPairsChanged = True, 0
+    while (iter < maxIter) and ((alphaPairsChanged > 0) or (entireSet == True)):
+        iter += 1
+        l = np.arange(oS.m)
+        if not entireSet:
+            l = l[np.array(oS.alphas.A[:, 0] > 0) & np.array(oS.alphas.A[:, 0] < C)]  # oS.alphas.A[:,0]为什么是list不是array?
+        for i in l:
+            alphaPairsChanged += innerL(i, oS)
+        print("iter: %d i:%d, pairs changed %d" % (iter, i, alphaPairsChanged))
+        if entireSet == True:
+            entireSet = False
+        elif alphaPairsChanged == 0:
+            if entireSet == False:
+                entireSet = True
+    return oS
