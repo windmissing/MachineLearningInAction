@@ -63,11 +63,11 @@ def update(I, J, C, b):
     b = update_b(I, J, C, b)
     return I['a'], J['a'], b
 
-def K(I, J):
+def product(I, J):
     return I['x'] * J['x'].T
 
 def calc_eta(I, J):
-    eta = 2.0 * K(I, J) - K(I, I) - K(J, J)
+    eta = 2.0 * product(I, J) - product(I, I) - product(J, J)
     if eta >= 0:
         raise UserWarning('eta>=0')
     return eta
@@ -110,7 +110,6 @@ def update_alpha_i(I, J):
 def update_b(I, J, C, b):
     b1 = b + calc_b_gap(I, J, I)
     b2 = b + calc_b_gap(I, J, J)
-    print(b1, b2)
     if (not isInBound(I, C)):
         b = b1
     elif (not isInBound(J, C)):
@@ -123,7 +122,7 @@ def isInBound(I, C):
     return not (0 < I['a']) and (I['a'] < C)
 
 def calc_b_gap(I, J, target):
-    return float(-target['E'] - I['y']*K(I, target)*(I['gap']) - J['y']*K(J, target)*(J['gap']))
+    return float(-target['E'] - I['y']*product(I, target)*(I['gap']) - J['y']*product(J, target)*(J['gap']))
 
 # 使用SMO算法求出alpha，然后根据alpha计算w和b
 def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
@@ -184,8 +183,10 @@ def showSimpleSMO(dataArr, labelArr, alphas, b):
             plt.scatter([x], [y], s=150, c='none', alpha=0.7, linewidth=1.5, edgecolor='#AB3319')
     plt.show()
 
+# --------------------------------------------------------------------------------------------------------------
+
 class optStruct:
-    def __init__(self, dataMatIn, classLabels, C, toler):
+    def __init__(self, dataMatIn, classLabels, C, toler, kernel=product):
         self.X = np.mat(dataMatIn)
         self.labelMat = np.mat(classLabels).transpose()
         self.C = C
@@ -194,13 +195,28 @@ class optStruct:
         self.alphas = np.mat(np.zeros((self.m, 1)))# 把所有alpha都初始化为0
         self.b = 0
         self.eCache = np.mat(np.zeros((self.m, 2))) # m*2, [i,0]代表[i,1]值是否有效。[i,1]代表E_i
+        self.kernel = kernel
+        #self.K = kernel(self.X)
+
+# X: m*n
+# y: 1*n向量映射成1*m的向量
+def kernelTrans(X, y, kernel):
+    if kernel == product:
+        temp = y * X.T
+    else:
+        k = np.mat(np.zeros((X.shape[0], 1)))
+        for j in range(X.shape[0]):
+            k[j] = (X[j] - y)*(X[j] - y).T
+        temp = np.exp(-k/(smoP.sigma**2)).T
+    return temp
 
 # 相当于上面的def E(dataMat, labelMat, alphas, i, b)
-def calcEk(oS, k):
-     # fx: the predition of the class
-    fXi = float(np.multiply(oS.alphas, oS.labelMat).T*(oS.X*oS.X[k,:].T)) + oS.b
+def calcEk(oS, i):
+    # fx: the predition of the class
+    temp = kernelTrans(oS.X, oS.X[i], oS.kernel)
+    fXi = float(temp * np.multiply(oS.alphas, oS.labelMat)) + oS.b
     # E: error between predition class and real class
-    Ei = fXi - oS.labelMat[k]
+    Ei = fXi - oS.labelMat[i]
     return Ei
 
 # 类似于前面的def selectJrand(i, m):
@@ -258,18 +274,51 @@ def updateEk_2(oS, K):
     oS.alphas[k] = K['a']
     oS.eCache[k] = [1, calcEk(oS, k)]
 
+def gaussianKernel(I, J):
+    return - (J['x'] - I['x']).dot((J['x'] - I['x']).T) / (smoP.sigma**2)
+
+def calc_eta_2(K, I, J):
+    eta = 2.0 * K(I, J) - K(I, I) - K(J, J)
+    if eta >= 0:
+        raise UserWarning('eta>=0')
+    return eta
+
+def update_alpha_j_2(oS, I, J):
+    # eta: the optional amount to change alpha[j]
+    eta = calc_eta_2(oS.kernel, I, J)
+    alphas_j = J['a']-J['y'] *(I['E'] - J['E']) / eta
+    # make sure alpha_j is in [0, C]
+    L, H = calcLH(oS.C, I, J)   # 此处要用到更新前的J['a']和I['a']
+    alphas_j = clipAlpha(alphas_j, H, L)
+    J['gap'] = alphas_j - J['a']
+    J['a'] = alphas_j
+    if(abs(J['gap']) < 0.00001):# the float way to compare
+        raise UserWarning('J not moving enough')
+
+def update_b_2(oS, I, J):
+    b1 = oS.b + calc_b_gap_2(I, J, I, oS.kernel)
+    b2 = oS.b + calc_b_gap_2(I, J, J, oS.kernel)
+    if (not isInBound(I, oS.C)):
+        b = b1
+    elif (not isInBound(J, oS.C)):
+        b = b2
+    else:
+        b = (b1 + b2)/2.0
+    return b
+
+def calc_b_gap_2(I, J, target, K):
+    return float(-target['E'] - I['y']*K(I, target)*(I['gap']) - J['y']*K(J, target)*(J['gap']))
 
 # 更新alpha_i, alpha_j和b，使得目标函数进一步变大
 def update_2(oS, I, J):
     # 根据公式先更新alpha_j
-    update_alpha_j(I, J, oS.C)
+    update_alpha_j_2(oS, I, J)
     updateEk_2(oS, J)
     # change alpha_i as alpha_j changed
     update_alpha_i(I, J)
     updateEk_2(oS, I)
     # 当更新了一对a_i,a_j之后，需要重新计算b。
-    oS.b = update_b(I, J, oS.C, oS.b)
-    print(I['a'], J['a'], oS.b)
+    oS.b = update_b_2(oS, I, J)
     # return I['a'], J['a'], oS.b
 
 
@@ -279,16 +328,19 @@ def innerL(i, oS):
         J = generateJ_2(oS, I)
         update_2(oS, I, J)
     except UserWarning as err:
-        print(err)  # 打印报错的字符串
+        # 因为打印太多，把它屏蔽掉了
+        # print(err)  # 打印报错的字符串
         return 0
     return 1
 
 
-def smoP(dataMatIn, classLabels, C, toler, maxIter):
-    oS = optStruct(dataMatIn, classLabels, C, toler)
+def smoP(dataMatIn, classLabels, C, toler, maxIter, kernel=product, sigma =0.1):
+    smoP.sigma = sigma
+    oS = optStruct(dataMatIn, classLabels, C, toler, kernel)
     iter = 0
     entireSet, alphaPairsChanged = True, 0
     while (iter < maxIter) and ((alphaPairsChanged > 0) or (entireSet == True)):
+        alphaPairsChanged = 0
         iter += 1
         l = np.arange(oS.m)
         if not entireSet:
@@ -302,3 +354,84 @@ def smoP(dataMatIn, classLabels, C, toler, maxIter):
             if entireSet == False:
                 entireSet = True
     return oS
+
+
+def testWithFile(filename, supportVectors, labelSV, alphas, svInd, b):
+    dataArr, labelArr = loadDataSet(filename)
+    datMat = np.mat(dataArr); labelMat = np.mat(labelArr).transpose()
+    m, n = np.shape(datMat)
+    errorCount = 0
+    for i in range(m):
+        # 把测试数据集从向量空间升级到kernel向量空间
+        # 这个转换过程不需要全部的数据集，只要支撑向量就可以了
+        # datMat[i,:] -> kernelEval
+        kernelEval = kernelTrans(supportVectors, datMat[i, :], gaussianKernel)  # 1*m
+        # 把新的空间上的向量代入公式wx+b预测y
+        predict = kernelEval.dot((np.multiply(labelSV, alphas[svInd])).T) + b
+        # 不是判断相等，而是判断正负号，因为正负代表分类，具体的数值的绝对值代表分类的可信度
+        if np.sign(predict) != np.sign(labelArr[i]): errorCount += 1
+    print("the training error rate is: %f" % (float(errorCount) / m))
+
+def testRbf(sigma=1.3):
+    dataArr, labelArr = loadDataSet('testSetRBF.txt')
+    oS = smoP(dataArr, labelArr, 200, 0.0001, 1000, gaussianKernel, sigma)
+    b, alphas = oS.b, oS.alphas.T.A[0]
+    svInd = alphas > 1e-3
+    datMat = np.array(dataArr);
+    labelMat = np.array(labelArr).transpose()
+    supportVectors = datMat[alphas > 1e-3]
+    labelSV = labelMat[svInd]
+    print("there are %d Support Vectors" % supportVectors.shape[0])
+    return  supportVectors, labelSV, alphas, svInd, b
+
+def img2vector(filename):
+    ret = np.zeros((0))
+    fr = open(filename)
+    for line in fr.readlines():
+        line = line[:32]
+        newinfo = np.array(list(line), dtype=int)
+        ret = np.hstack([ret, newinfo])
+    return ret.reshape(1,-1)
+
+from os import listdir
+def loadImages(dirName):
+    labels = []
+    dataSet = np.zeros((0,1024))
+    trainingFileList = listdir('digits/'+dirName)
+    for file in trainingFileList:
+        digit = int(file.split('_')[0])
+        if digit == 9:
+            labels.append(-1)
+        else:
+            labels.append(1)
+        dataSet = np.vstack([dataSet, img2vector('digits/'+dirName+'/'+file)])
+    return dataSet, labels
+
+def testDigits(kernel, sigma):
+    dataArr,labelArr = loadImages('trainingDigits')
+    oS = smoP(dataArr, labelArr, 200, 0.0001, 10000, kernel, sigma)
+    b, alphas = oS.b, oS.alphas.T.A[0]
+    svInd = alphas > 1e-3
+    datMat = np.array(dataArr);
+    labelMat = np.array(labelArr).transpose()
+    supportVectors = datMat[alphas > 1e-3]
+    labelSV = labelMat[svInd]
+    print("there are %d Support Vectors" % supportVectors.shape[0])
+    return  supportVectors, labelSV, alphas, svInd, b
+
+def testDigitWithFile(filename, supportVectors, labelSV, alphas, svInd, b):
+    dataArr, labelArr = loadImages(filename)
+    datMat = np.mat(dataArr); labelMat = np.mat(labelArr).transpose()
+    m, n = np.shape(datMat)
+    errorCount = 0
+    for i in range(m):
+        # 把测试数据集从向量空间升级到kernel向量空间
+        # 这个转换过程不需要全部的数据集，只要支撑向量就可以了
+        # datMat[i,:] -> kernelEval
+        kernelEval = kernelTrans(supportVectors, datMat[i, :], gaussianKernel)  # 1*m
+        # 把新的空间上的向量代入公式wx+b预测y
+        predict = kernelEval.dot((np.multiply(labelSV, alphas[svInd])).T) + b
+        # 不是判断相等，而是判断正负号，因为正负代表分类，具体的数值的绝对值代表分类的可信度
+        # print(predict, labelArr[i])
+        if np.sign(predict) != np.sign(labelArr[i]): errorCount += 1
+    print("the training error rate is: %f" % (float(errorCount) / m))
