@@ -73,7 +73,7 @@ def adaBoostTrainDS(dataArr,classLabels,numIt=40):
         aggErrorRate = np.sum(np.sign(aggPredict) != np.array(classLabels))/ m
         print ("total error: ",aggErrorRate)
         if aggErrorRate == 0.0:break
-    return weekClassifier
+    return weekClassifier, aggPredict
 
 def adaClassify(datToClass,classifierArr):
     data = np.array(datToClass)
