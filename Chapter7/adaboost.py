@@ -84,3 +84,12 @@ def adaClassify(datToClass,classifierArr):
         ret += predict
     print (ret)
     return np.sign(ret)
+
+def loadDataSet(fileName):
+    dataMat = []
+    labelMat = []
+    for line in open(fileName).readlines():
+        dataList = [1] + [float(data) for data in line.strip().split('\t')]  # 应该增加一个x0 =1，但书上没有[1]
+        dataMat.append(dataList[0:-1])
+        labelMat.append(dataList[-1])
+    return dataMat, labelMat
