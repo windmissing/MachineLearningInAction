@@ -51,3 +51,28 @@ def plotLwlrTest(k):
 
 def rssError(yArr,yHatArr):
     return ((yArr-yHatArr)**2).sum()
+
+
+def ridgeRegres(xArr,yArr,lam=0.2):
+    X, y = np.array(xArr), np.array(yArr)
+    xTx = X.T.dot(X) + lam * np.eye(X.shape[1])
+    if np.linalg.det(xTx) == 0.0:
+        print("This matrix is singular, cannot do inverse")
+        return
+    ws = np.mat(xTx).I.dot(X.T).dot(y)
+    return ws.T
+
+# 标准化
+def autoNorm(dataSet):
+    max = np.max(dataSet, axis=0)
+    min = np.min(dataSet, axis=0)
+    return ((dataSet -min) / (max-min))
+
+def ridgeTest(xArr,yArr):
+    X = autoNorm(np.array(xArr))
+    y = autoNorm(np.array(yArr))
+    ws = np.zeros((0, X.shape[1]))
+    for i in range(-10, 20):
+        w = ridgeRegres(X,y,np.exp(i)).T
+        ws = np.vstack([ws, w])
+    return ws
