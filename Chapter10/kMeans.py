@@ -26,6 +26,7 @@ def kMeans(dataSet, k, distMeas=distEclud, createCent=randCent):
     # While any point has changed cluster assignment
     while iteration:
         iteration = False;
+        totalError = 0
         # for every point in our dataset:
         for i, data in enumerate(dataSet):
             # calculate the distance between the centroid and point
@@ -34,13 +35,14 @@ def kMeans(dataSet, k, distMeas=distEclud, createCent=randCent):
             if clusterAssment[i] != center: iteration = True
             # assign the point to the cluster with the lowest distance
             clusterAssment[i] = center
+            totalError += dis[center]
         # for every cluster
         for i in range(k):
             #calculate the mean of the points in that cluster
             #assign the centroid to the mean
             if dataSet[clusterAssment==i].shape[0]:  # 有可能一开始有个随机中心点离所有点都很远
                 centerId[i, :] = dataSet[clusterAssment==i].mean(axis=0)
-    return centerId, clusterAssment
+    return centerId, clusterAssment, totalError
 
 def plotKMeans(dataSet, k, centerId, clusterAssment):
     for i in range(k):
