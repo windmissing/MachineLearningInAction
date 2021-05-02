@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from math import log
 def calcShannonEnt(dataSet):
     count = {}
@@ -10,15 +11,6 @@ def calcShannonEnt(dataSet):
         p_key = count[key] / sum
         entropy = entropy - p_key * log(p_key, 2)    # entropy的计算可以以2为底或者以e为底。本书中是以2为底。
     return entropy
-
-def createDataSet():
-    dataSet = [[1, 1, 'yes'],
-    [1, 1, 'yes'],
-    [1, 0, 'no'],
-    [0, 1, 'no'],
-    [0, 1, 'no']]
-    labels = ['no surfacing','flippers']
-    return dataSet, labels
 
 def splitDataSet(dataSet, axis, value):
     newDataSet = []
