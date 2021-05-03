@@ -4,7 +4,9 @@ https://github.com/windmissing/MachineLearningInAction
 # 包含的ML算法
 
 KNN  
-决策树
+决策树  
+朴素贝叶斯  
+逻辑回归
 
 # 参考过的材料
 
