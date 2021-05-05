@@ -140,5 +140,3 @@ class PlattSMO(SMO):
             print ("support vectors labels = ", self.supportLabels, self.supportLabels.shape)
         # self.w = self.get_w(self.alphas, oS.X, oS.labelMat)
         # print ("w = ", self.w)        
-
-
