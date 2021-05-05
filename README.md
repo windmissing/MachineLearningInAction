@@ -6,7 +6,8 @@ https://github.com/windmissing/MachineLearningInAction
 KNN  
 决策树  
 朴素贝叶斯  
-逻辑回归
+逻辑回归  
+SVM
 
 # 参考过的材料
 
