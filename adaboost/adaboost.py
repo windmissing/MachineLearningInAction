@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
+verbose = 0
+
 # performs a threshold comparison to classify data
 # Everything on one side of the threshold is thrown into class -1, and everything on the other side is thrown into class +1
 def stumpClassify(dataMatrix, feature, value, ineq):
@@ -49,9 +51,10 @@ def adaBoostTrainDS(dataArr,classLabels,numIt=40):
         # note 1: 公式中是ln，怎么代码里变成log了？
         # note 2: 分母写成max(error,1e-16)是为了避免下溢错误
         # note 3: error越大，alpha越小，训练结果越不可信，D和appPreidct更新越少
-        print ('D=',D)
+        if verbose:
+            print ('D=',D)
+            print ("predict: ", predict)
         stump['alpha'] = 0.5 * np.log((1-error)/max(error,1e-16))
-        print ("predict: ", predict)
         weekClassifier.append(stump) # Add the best stump to the stump array
         # Calculate the new weight vector – D
         # 当预测错误时，y_predict * y_true = -1, 当预测正确时，y_predict * y_true = 1
@@ -59,11 +62,12 @@ def adaBoostTrainDS(dataArr,classLabels,numIt=40):
         expon = -predict * np.array(classLabels) * stump['alpha']
         D = D * np.exp(expon);D /=  D.sum() # 这两步要分开写，因为第二步用的D是新的D。第二步是为了保证D.sum()始终为1
         aggPredict += stump['alpha'] * predict # Update the aggregate class estimate
-        print ('aggpredict=',aggPredict)
         # 正负号代表预测结果，符号相同即预测正确
         # note 1: errorRate和error不同的是，errorRate不考虑权重，只是错误样本所占的比例
         aggErrorRate = np.sum(np.sign(aggPredict) != np.array(classLabels))/ m
-        print ("total error: ",aggErrorRate)
+        if verbose:
+            print ('D=',D)
+            print ("predict: ", predict)
         if aggErrorRate == 0.0:break
     return weekClassifier, aggPredict
 
@@ -74,14 +78,6 @@ def adaClassify(datToClass,classifierArr):
         predict = stumpClassify(data, classifier['feature'], classifier['value'], classifier['ineq'])
         predict = predict * classifier['alpha']
         ret += predict
-    print (ret)
+    if verbose:
+        print (ret)
     return np.sign(ret)
-
-def loadDataSet(fileName):
-    dataMat = []
-    labelMat = []
-    for line in open(fileName).readlines():
-        dataList = [1] + [float(data) for data in line.strip().split('\t')]  # 应该增加一个x0 =1，但书上没有[1]
-        dataMat.append(dataList[0:-1])
-        labelMat.append(dataList[-1])
-    return dataMat, labelMat

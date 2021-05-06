@@ -7,7 +7,8 @@ KNN
 决策树  
 朴素贝叶斯  
 逻辑回归  
-SVM
+SVM  
+adaboost
 
 # 参考过的材料
 
