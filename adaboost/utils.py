@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 
 def loadSimpData():
@@ -8,6 +9,14 @@ def loadSimpData():
     [ 2. , 1. ]])
     classLabels = [1.0, 1.0, -1.0, -1.0, 1.0]
     return datMat,classLabels
+
+def calculateAccuray(predict, target):
+    s = 0
+    for i in range(predict.shape[0]):
+        if predict[i] == target[i]:
+            s += 1
+    return s/predict.shape[0]
+
 
 # performs a threshold comparison to classify data
 # Everything on one side of the threshold is thrown into class -1, and everything on the other side is thrown into class +1
