@@ -8,7 +8,7 @@ def loadDataSet(fileName):
         dataList = [float(data) for data in line.strip().split('\t')]
         dataMat.append(dataList[0:-1])
         labelMat.append(dataList[-1])
-    return dataMat, labelMat
+    return np.array(dataMat), np.array(labelMat)
 
 def standRegres(xArr,yArr):
     X, y = np.array(xArr), np.array(yArr)
