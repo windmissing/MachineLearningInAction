@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -34,11 +35,10 @@ def lwlr(testPoint,xArr,yArr,k):
     return test.dot(w.T)[0,0]
 
 def lwlrTest(testArr,xArr,yArr,k):
-    m = np.array(xArr).shape[0]
     predict = []
     for test in testArr:
-        predict[i] = lwlr(test, xArr, yArr, k)
-    return predict
+        predict.append(lwlr(test, xArr, yArr, k))
+    return np.array(predict)
 
 def plotLwlrTest(k):
     xArr,yArr=loadDataSet('ex0.txt')
