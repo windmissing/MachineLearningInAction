@@ -8,7 +8,14 @@ KNN
 朴素贝叶斯  
 逻辑回归  
 SVM  
-adaboost
+adaboost  
+Regression  
+回归树  
+KMeans  
+Apriori  
+FpGrowth  
+PCA  
+SVDRec
 
 # 参考过的材料
 

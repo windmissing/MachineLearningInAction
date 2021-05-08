@@ -1,12 +1,6 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import matplotlib.pyplot as plt
-
-def loadDataSet(fileName):
-    dataMat = []
-    for line in open(fileName).readlines():
-        dataList = [float(data) for data in line.strip().split('\t')]
-        dataMat.append(dataList)
-    return dataMat
 
 def binSplitDataSet(dataSet, feature, value):
     mat0 = dataSet[dataSet[:,feature]>value]

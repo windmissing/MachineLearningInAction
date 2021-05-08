@@ -11,34 +11,15 @@ def loadDataSet(fileName):
         labelMat.append(dataList[-1])
     return np.array(dataMat), np.array(labelMat)
 
-def plotLwlrTest(xArr, yArr, predictList):
-    sortedIndex = xArr[:,1].argsort()
-    plt.scatter(xArr[:,1], yArr, s=2)
-    for i, predict in enumerate(predictList):
-        plt.plot(xArr[sortedIndex,1],predict[sortedIndex],  label=str(i))
-    plt.legend()
+def plotResult(x, y, predict_y):
+    plt.scatter(x, y)
+    sortedIndex = x.argsort()
+    plt.plot(x[sortedIndex],predict_y[sortedIndex], color='r')
     plt.show()
 
 def rssError(yArr,yHatArr):
     return ((yArr-yHatArr)**2).sum()
 
-
-def ridgeRegres(xArr,yArr,lam=0.2):
-    X, y = np.array(xArr), np.array(yArr)
-    xTx = X.T.dot(X) + lam * np.eye(X.shape[1])
-    if np.linalg.det(xTx) == 0.0:
-        print("This matrix is singular, cannot do inverse")
-        return
-    ws = np.mat(xTx).I.dot(X.T).dot(y)
-    return ws.T
-
-def plotRidge():
-    abX,abY=loadDataSet('abalone.txt')
-    ridgeWeights=ridgeTest(abX,abY)
-    import matplotlib.pyplot as plt
-    print (ridgeWeights.shape)
-    plt.plot(ridgeWeights)
-    plt.show()
 
 # 标准化
 # 这个作者对标准化（Standardization）、归一化（normalization）、正则化（regularization）这三个术语有什么误解？
@@ -49,15 +30,6 @@ def standardization(dataSet):
     mean = np.mean(dataSet, axis=0)
     std = np.std(dataSet, axis=0)
     return ((dataSet - mean) / std)
-
-def ridgeTest(xArr,yArr):
-    X = standardization(np.array(xArr))
-    y = np.array(yArr)
-    ws = np.zeros((0, X.shape[1]))
-    for i in range(-10, 20):
-        w = ridgeRegres(X,y,np.exp(i)).T
-        ws = np.vstack([ws, w])
-    return ws
 
 def stageWise(xArr,yArr,eps=0.01,numIt=100):
     # Regularize the data to have 0 mean and unit variance

@@ -1,12 +1,12 @@
+# -*- coding: utf-8 -*-
+# +
 import numpy as np
 import matplotlib.pyplot as plt
 
-def loadDataSet(fileName):
-    dataMat = []
-    for line in open(fileName).readlines():
-        dataList = [float(data) for data in line.strip().split('\t')]
-        dataMat.append(dataList)
-    return dataMat
+np.random.seed(666)
+
+
+# -
 
 def distEclud(vecA, vecB):
     return np.sqrt(((vecA - vecB) ** 2).sum())
@@ -50,16 +50,10 @@ def kMeans(dataSet, k, distMeas=distEclud, createCent=randCent):
             if dataSet[clusterAssment==i].shape[0]:  # 有可能一开始有个随机中心点离所有点都很远
                 centerId[i, :] = dataSet[clusterAssment==i].mean(axis=0)
             else:
-                plotKMeans(dataSet, k, centerId, clusterAssment)
+                # plotKMeans(dataSet, k, centerId, clusterAssment)
                 raise UserWarning('the center is far from every one')
     # centerError在biKmeans()中会有用
     return centerId, clusterAssment, centerError
-
-def plotKMeans(dataSet, k, centerId, clusterAssment):
-    for i in range(k):
-        plt.scatter(dataSet[clusterAssment==i,0], dataSet[clusterAssment==i,1])
-        plt.scatter(centerId[i, 0],centerId[i, 1], marker='+', s = 150, c='black')
-    plt.show()
 
 def biKmeans(dataSet, k, distMeas=distEclud):
     # Start with all the points in one cluster
