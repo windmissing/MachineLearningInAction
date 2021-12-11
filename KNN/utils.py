@@ -3,22 +3,14 @@ import numpy as np
 from math import sqrt
 import operator
 import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
 
 def createDataSet():
-    train_X = np.array([[3.39, 2.33],
-                      [3.11, 1.78],
-                      [1.34, 3.36],
-                      [3.58, 4.67],
-                      [2.28, 2.86],
-                      [7.42, 4.69],
-                      [5.74, 3.53],
-                      [9.17, 2.51],
-                      [7.79, 3.42],
-                      [7.93, 0.79]
-                     ])
-    train_y = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1])
-    test_X = np.array([[8.09, 3.36]])
-    return train_X, train_y, test_X
+    iris = datasets.load_iris()
+    X = iris.data
+    y = iris.target
+    return train_test_split(X, y, test_size=0.2, random_state=666)
 
 def plotData(train_X, train_y, test_X):
     plt.scatter(train_X[train_y==0, 0], train_X[train_y==0, 1], color = 'g')
@@ -43,7 +35,7 @@ def file2matrix(filename):
         classLabelVector.append(int(listFromLine[-1]))  # 提取输出标记，并加入输出列表中
 
         index += 1
-    return returnMat, classLabelVector
+    return np.array(returnMat), np.array(classLabelVector)
 
 def plotDatingData(train_X, train_y):
     fig = plt.figure(figsize=(12,3))
