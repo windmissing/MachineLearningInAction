@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import numpy as np
+
 def createDataSet():
     dataSet = [[1, 1, 'yes'],
     [1, 1, 'yes'],

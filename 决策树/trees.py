@@ -33,6 +33,29 @@ def chooseBestFeatureToSplit(dataSet):
             bestFeature = i
     return bestFeature
 
+def findBestSplit(X_train, y_train):
+    demention = X_train.shape[1]
+    value = X_train.shape[0]
+    best_d = 0
+    best_v = X_train[0,0]
+    best_l = None
+    best_r = None
+    best_entropy = -1
+    for d in range(demention):
+        s = set(X_train[:,d])
+        for v in s:
+            l, r = trySplit(X_train, y_train, d, v)
+            if (l[1].shape[0] == 0 or r[1].shape[0]==0):
+                continue
+            en = calculateEntropy(l[1]) + calculateEntropy(r[1])
+            if best_entropy < 0 or en < best_entropy:
+                best_d = d
+                best_v = v
+                best_entropy = en
+                best_l = l
+                best_r = r
+    return best_d, best_v, best_l, best_r, best_entropy
+
 import operator
 def majorityCnt(classList):
     count = {}

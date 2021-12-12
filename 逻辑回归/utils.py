@@ -19,7 +19,7 @@ def plotBestFit(train_X,train_y, coeff):
     plt.scatter(train_X[train_y==0,1], train_X[train_y==0, 2])
     plt.scatter(train_X[train_y==1,1], train_X[train_y==1, 2])
     # 画线
-    w = coeff.T.getA()[0]
+    w = coeff.T[0]
     x = np.array([-3.0, 3.0])
     y = (-w[0]-w[1]*x)/w[2]
     plt.plot(x, y)

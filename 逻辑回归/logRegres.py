@@ -4,45 +4,54 @@ import matplotlib.pyplot as plt
 
 def sigmoid(inX):
     return 1.0 / (1 + np.exp(-inX))
+    # return np.exp(inX) / (1 + np.exp(inX))
 
-def gradAscent(dataMatIn, classLabels, loops = 500, alpha = 0.001):
-    coeff = np.ones((len(dataMatIn[0]), 1))  # 特征数n * 1
-
-    dataMatrix = np.mat(dataMatIn)  # 样本数m * 特征数n
-    labelMatrix = np.mat(classLabels).transpose()  # 样本数m * 1
+np.random.seed(666)
+def gradAscent(X_train, y_train, lr = 1e-3, loops = 500):
+    y_train = y_train.reshape([-1,1])
+    W = np.random.random([X_train.shape[1], 1])
     for i in range(loops):
-        error = sigmoid(dataMatrix * coeff) - labelMatrix
-        # 偏导根据上面的公式计算，去掉了常量1/m
-        coeff = coeff - alpha * dataMatrix.transpose() * error
-    return coeff
+        loss = lossFunction(sigmoid(X_train.dot(W)), y_train)
+        if loss < 1e-2:
+            break;
+        W = W - lr * X_train.T.dot(sigmoid(X_train.dot(W))- y_train)
+    return W
 
-def stocGradAscent0(dataMatrix, classLabels, alpha = 0.01):
-    coeff = np.ones((len(dataMatrix[0]), 1))  # 特征数n * 1
+def stocGradAscent0(X_train, y_train, lr = 1e-2):
+    y_train = y_train.reshape([-1,1])
+    W = np.random.random([X_train.shape[1], 1])  # 特征数n * 1
 
-    for i, data in enumerate(dataMatrix):
-        dataArray = np.mat(data)
-        error = sigmoid(dataArray * coeff) - classLabels[i]
-        coeff = coeff - alpha * dataArray.T * error
-    return coeff
+    for i, data in enumerate(X_train):
+        data = data.reshape([1,-1])
+        loss = lossFunction(sigmoid(data.dot(W)), y_train[i])
+        W = W - lr * data.T.dot(sigmoid(data.dot(W))- y_train[i])
+    return W
 
-def stocGradAscent1(dataMatrix, classLabels, loops=150):
-    coeff = np.ones((len(dataMatrix[0]), 1))  # 特征数n * 1
+def stocGradAscent1(X_train, y_train, loops=150):
+    y_train = y_train.reshape([-1,1])
+    W = np.random.random([X_train.shape[1], 1])  # 特征数n * 1
     for j in range(loops):
-        for i, index in enumerate(np.random.permutation(len(dataMatrix))):
+        for i, index in enumerate(np.random.permutation(len(X_train))):
             alpha = 4 / (1.0+i+j) + 0.01
-            dataArray = np.mat(dataMatrix[index])
-            error = sigmoid(dataArray * coeff) - classLabels[index]
-            coeff = coeff - alpha * dataArray.T * error
-    return coeff
+            data = X_train[index].reshape([1,-1])
+            loss = lossFunction(sigmoid(data.dot(W)), y_train[index])
+            W = W - alpha * data.T.dot(sigmoid(data.dot(W))- y_train[index])
+    return W
 
-def classify(test_X, coeff):
-    ret = []
-    for x in test_X:
-        y = classifyForOneData(x, coeff)
-        ret.append(y)
-    return np.array(ret)
+# def classify(test_X, coeff):
+#     ret = []
+#     for x in test_X:
+#         y = classifyForOneData(x, coeff)
+#         ret.append(y)
+#     return np.array(ret)
 
+def classify(W, test_X):
+    y_hat = sigmoid(test_X.dot(W))
+    return (y_hat>0.5)
 
-def classifyForOneData(inX, weights):
-    h = sigmoid(np.mat(inX) * np.mat(weights))
-    return h > 0.5
+def lossFunction(y_predict, y_target):
+    return np.sum(- y_target * np.log(y_predict) - (1-y_target)* np.log(1-y_predict))
+
+# def classifyForOneData(inX, weights):
+#     h = sigmoid(np.mat(inX) * np.mat(weights))
+#     return h > 0.5
